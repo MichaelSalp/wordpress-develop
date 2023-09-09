@@ -410,20 +410,36 @@ switch ( $step ) {
 		}
 		unset( $line );
 
-		if ( ! is_writable( ABSPATH ) ) :
+		$dbhost_is_in_private_network = wp_is_dbhost_in_private_network( $dbhost );
+
+		if ( ! is_writable( ABSPATH ) || !$dbhost_is_in_private_network  ) :
 			setup_config_display_header();
 			?>
 <p>
 			<?php
-			/* translators: %s: wp-config.php */
-			printf( __( 'Unable to write to %s file.' ), '<code>wp-config.php</code>' );
+			if(!$dbhost_is_in_private_network){
+				//* translators: 1: Database Host, 2: wp-config.php. */
+				printf( __( 'Your database host %s is not part of a private network. For security reasons WordPress can not save the %s file automatically.' ), $dbhost, '<code>wp-config.php</code>' );
+			}
+
+			if(! is_writable( ABSPATH )){
+				/* translators: %s: wp-config.php */
+				printf( __( 'Unable to write to %s file.' ), '<code>wp-config.php</code>' );
+			}
 			?>
 </p>
 <p id="wp-config-description">
 			<?php
 			/* translators: %s: wp-config.php */
-			printf( __( 'You can create the %s file manually and paste the following text into it.' ), '<code>wp-config.php</code>' );
+			printf( __( 'You can create the %s file manually and paste the following text into it. ' ), '<code>wp-config.php</code>' );
 
+			printf(
+				/* translators: 1: Documentation URL, 2: wp-config.php */
+				__( 'Need more help? <a href="%1$s">Read the support article on %2$s</a>.' ),
+				__( 'https://wordpress.org/documentation/article/editing-wp-config-php/' ),
+				'<code>wp-config.php</code>'
+			);
+		
 			$config_text = '';
 
 			foreach ( $config_file as $line ) {

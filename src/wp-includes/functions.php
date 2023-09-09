@@ -8789,6 +8789,7 @@ function wp_is_dbhost_in_private_network( $dbhost ) {
 
 	$ip_long = ip2long($dbhostip);
 	foreach ($private_networks as $network) {
+<<<<<<< HEAD
 		list($subnetIP, $subnetMask) = explode('/', $network);
 		$subnetStartLong = ip2long($subnetIP);
 		$subnetMaskLong = -1 << (32 - $subnetMask);
@@ -8796,6 +8797,14 @@ function wp_is_dbhost_in_private_network( $dbhost ) {
 		// Check if the target IP is within the subnet
 		if (($ip_long & $subnetMaskLong) === ($subnetStartLong & $subnetMaskLong)) {
     		return true; // IP address is in a private network
+=======
+		list($network_ip, $subnet_mask) = explode('/', $network);
+		$network_long = ip2long($network_ip);
+		$subnet_mask = pow(2, (32 - $subnet_mask)) - 1;
+		$subnet_long = $network_long & $subnet_mask;
+		if (($ip_long & $subnet_mask) === $subnet_long) {
+            return true; // IP address is in a private network
+>>>>>>> 4620757f87664807d2158601ac7c2b460b336699
         }
     }
 

@@ -8754,3 +8754,49 @@ function is_php_version_compatible( $required ) {
 function wp_fuzzy_number_match( $expected, $actual, $precision = 1 ) {
 	return abs( (float) $expected - (float) $actual ) <= $precision;
 }
+
+/**
+ * Checks if the given dbhost is part of Private Adress Spaces rfc1918
+ *
+ * Converts the DB Host IP into long integer and compares with the given private networks.
+ * Additional networks can by specifying an environment variable `WP_ALLOWED_DBNETWORK`
+ *
+ * @since 6.5.0
+ * 
+ * @param string $dbhost IP or Hostname for DB Host
+ * @return bool Wheater is in private network or not
+ */
+function wp_is_dbhost_in_private_network( $dbhost ) {
+	$private_networks = array( 
+		"127.0.0.0/8",
+		"10.0.0.0/8",
+		"172.16.0.0/12",
+		"192.168.0.0/16"
+	);
+
+	// Check if `getenv` is available on the system, if the environment variable has been set and looks like a IP with subnetmask
+	if ( function_exists( 'getenv' ) && getenv( 'WP_ALLOWED_DBNETWORK' ) ) {
+		$pattern = '/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\/(\d{1,2})$/';
+		$allowed_network = getenv( 'WP_ALLOWED_DBNETWORK' );
+
+		if (preg_match($pattern, $allowed_network)) {
+			$private_networks[] = getenv( 'WP_ALLOWED_DBNETWORK' );
+		}
+	}
+
+	// Check if DB Host is a IP or if not get IP by hostname
+	$dbhostip = filter_var($dbhost, FILTER_VALIDATE_IP) ? $dbhost : gethostbyname($dbhost);
+
+	$ip_long = ip2long($dbhostip);
+	foreach ($private_networks as $network) {
+		list($network_ip, $subnet_mask) = explode('/', $network);
+		$network_long = ip2long($network_ip);
+		$subnet_mask = pow(2, (32 - $subnet_mask)) - 1;
+		$subnet_long = $network_long & $subnet_mask;
+		if (($ip_long & $subnet_mask) === $subnet_long) {
+            return true; // IP address is in a private network
+        }
+    }
+
+    return false; // IP address is not in any of the private networks
+}
